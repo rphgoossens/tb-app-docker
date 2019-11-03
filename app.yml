@@ -1,0 +1,37 @@
+version: "3.3"
+services:
+  tb-mysql-db:
+    image: rphgoossens/tb-mysql-docker:tb-docker-2.0
+    volumes:
+      - type: volume
+        source: tb-mysql-shared
+        target: /var/lib/mysql
+  tb-springboot-app-1:
+    build: .
+    environment:
+      - SERVER_PORT=8090
+      - DB_USERNAME=tb_admin
+      - DB_PASSWORD=tb_admin
+      - DB_URL=mysql://tb-mysql-db:3306/db_terrax
+    depends_on:
+      - tb-mysql-db
+    command: ["/wait-for-it.sh", "tb-mysql-db:3306", "--timeout=0", "--", "java","-cp","app:app/lib/*","nl.terrax.tbspringbootdocker.TbSpringbootDockerApplication"]
+  tb-springboot-app-2:
+    build: .
+    environment:
+      - SERVER_PORT=8090
+      - DB_USERNAME=tb_admin
+      - DB_PASSWORD=tb_admin
+      - DB_URL=mysql://tb-mysql-db:3306/db_terrax
+    depends_on:
+      - tb-mysql-db
+    command: ["/wait-for-it.sh", "tb-mysql-db:3306", "--timeout=0", "--", "java","-cp","app:app/lib/*","nl.terrax.tbspringbootdocker.TbSpringbootDockerApplication"]
+  tb-nginx:
+    image: rphgoossens/tb-nginx-docker:tb-docker-2.0
+    ports:
+      - "8080:8080"
+    depends_on:
+      - tb-springboot-app-1
+      - tb-springboot-app-2
+volumes:
+  tb-mysql-shared:
